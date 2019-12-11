@@ -1,0 +1,562 @@
+---
+title: "Simulación con R"
+author: "Roms"
+date: "22/9/2019"
+output: 
+  html_document:
+    toc: true
+    code_folding: hide
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo=TRUE,out.width='80%', fig.pos= "H",fig.align='center',message=FALSE,  warning = FALSE)
+
+library(tidyverse)
+library(knitr)
+```
+
+
+# Familia `apply`
+
+Familia de funciones en R, diseñadas para hacer operaciones sobre estructuras de datos. Simplificando la escritura de código
+
+## `àpply`
+
+Permite realizar operaciones sobre las dimensiones de un array. Tiene la siguiente estructura:
+
+                            `apply(array,dim,FUN)`
+
+
+**Ahora considera el siguiente arreglo y el uso de `apply`:**
+
+
+```{r}
+e2<-array(runif(120,5,15),dim = c(6,5,4)) %>% round(.,0)
+```
+
+
+```{r}
+apply(e2,1,mean)
+apply(e2,2,mean)
+apply(e2,3,mean)
+```
+
+
+
+
+
+### Ejemplo 1. Suma de las columnas y renglones  de una matriz
+
+Considera una matriz $10\times10$:
+
+```{r}
+e1<-matrix(runif(100,5,50),ncol = 10) %>% round(.,0)
+e1
+```
+
+
+**¿Cómo hallamos la suma por columnas?**
+
+
+* Solución tipo `C`
+
+```{r }
+SumatipoC<-function(p,dim)
+{
+  #dim 0 renglón, 1 columnas
+ if(dim==1){p<-t(p)}
+ # Vector con las soluciones 
+ sol<-rep(0,nrow(p))
+ for(i in 1:nrow(p))
+ {
+   aux<-0
+   for(j in 1:ncol(p))
+   {
+     aux <-aux + p[i,j]
+     }
+   sol[i]<-aux
+   }
+  sol
+  }
+
+```
+
+
+* Usando un poco de vectorización de `R`
+
+
+```{r}
+SumaR<-function(p,dim)
+{
+  #dim 0 renglón, 1 columnas
+ if(dim==1){p<-t(p)}
+ # Vector con las soluciones 
+ sol<-rep(0,nrow(p))
+ for(i in 1:nrow(p))
+ {
+  sol[i]<-sum(p[i,])
+    
+  }
+  sol
+  }
+
+```
+
+Comparemos las funciones:
+
+```{r}
+library(microbenchmark)
+
+microbenchmark(
+                SumaR(e1,0),
+                SumatipoC(e1,0),
+                apply(e1,1,sum)
+                )
+
+
+```
+
+
+
+
+## `replicate`
+
+Repite una rutina, una cantidad *n* de veces. Puede devolver un vector o matriz. Forma de la función:
+
+`replicate(n,FUN)`
+
+```{r}
+#Devuelve vector
+replicate(3,rnorm(1))
+#Devuelve  matriz
+replicate(3,rnorm(5))
+```
+
+
+
+
+
+### Ejemplo 2. Tiro de una moneda cargada
+
+Considera el siguiente experimento con una moneda con probabilidad de exito p=0.2 .El experimento consiste en contar el número de tiros necesarios para obtener un exito. Repita el experimento 100 veces y reporte el promedio de tiros
+
+```{r}
+
+# Experimento distribucion geométrica
+# Se puede usar rgeom() parametrizada como cantidad de fallos 
+# antes de un éxito
+
+
+#Simular moneda cargada
+moneda<-function(p)
+{
+  #sample(c(0,1),1,prob = c(1-p,p))
+  rbinom(1,1,p)
+  
+}
+
+
+my_geom<-function(p)
+{
+  nFallos<-0
+  while(TRUE)
+  {
+    if(moneda(p)==1)
+    {
+      break
+    }
+    nFallos<- nFallos+1
+  }
+  nFallos
+}
+
+```
+
+* Posible solución usando `for`
+
+```{r}
+expsol1<-function(nIter,p)
+{
+sol<-rep(0,nIter)
+
+for(i in 1:nIter)
+{
+  sol[i]<-my_geom(p)
+}
+sol
+}
+```
+
+
+**Comparación con `replicate`**
+
+
+```{r}
+set.seed(1013)
+n<-1000
+p<-0.2
+microbenchmark(
+  expsol1(n,p),
+  replicate(n,my_geom(p)),
+  rgeom(n,p)
+) 
+```
+
+## `sapply`
+
+Evalua una lista (o arreglo de menor jerarquia) en una función, devuelve la estructura más conveniente.
+
+
+                        `sapply(vector,FUN,args**)`
+                        
+                        
+```{r}
+p<-c(0.2,0.4,0.6,0.8)
+
+sapply(p, moneda)
+
+```
+
+
+```{r}
+#funcion anónima
+
+sapply(2:10, function(x){(x+1)^2})
+
+```
+
+
+```{r}
+sapply(2:5, function(x){sapply(0:x,function(y,x){x^y},x=x)})
+
+
+```
+
+**Un pecado común entre los usuarios de R, es querer hacer todo en una sola linea. En un código es tan importante la claridad como la eficiencia**
+
+
+* Agregando parámetros adicionales
+
+
+```{r}
+mu<-c(20,50,100)
+sigma<-2
+n<-10
+
+sapply(mu,rnorm,n=n,sd=sigma)
+```
+
+
+### Ejemplo 3  Distribución geométrica
+
+Considera el experimento de contar el número de lanzamientos antes de conseguir un éxito de una moneda con probabilidad *p*. Repite el experimento $10^5$ veces y presenta un gráfico donde compares los valores obtenidos en la simulación contra los teóricos. Evalúa lo anterior con $p=(0.5,0.1,0.01)$
+
+
+
+```{r}
+my_sim_geom<-function(p,nIter)
+{
+  data<-replicate(nIter,my_geom(p))
+  x<-unique(data)
+  y<-dgeom(x,p)
+  plot(prop.table(table(data)),
+       col='darkred',
+       ylab = 'Prob',
+       xlab = 'Fallos antes de un éxito',
+       main = bquote(paste('p=',.(p),'  repeticiones=',.(nIter))))
+  points(x+0.3,y, type='h',col='dodgerblue4')
+  legend("topright",
+        xpd = TRUE,
+         inset=c(-0.15,0),
+         title= NULL,
+         cex=0.5,
+         legend=c("simulacion","Teorica"), fill=c("darkred","dodgerblue4"))
+}
+
+```
+
+
+```{r}
+
+ps<-c(0.5,0.1,0.01)
+par(mfrow=c(1,3))
+sapply(ps,my_sim_geom,nIter=100000)
+
+```
+
+
+## `lappy`
+
+Semejante a `sapply`, devuelve una lista
+
+```{r}
+mu<-c(20,50,100)
+sigma<-2
+n<-10
+
+lapply(mu,rnorm,n=n,sd=sigma)
+```
+
+
+##  `mapply`
+
+Versión multivariada de `sapply`, evalua una función con múltiples argumentos.
+
+      `mapply(FUN, ..., MoreArgs = NULL, SIMPLIFY = TRUE, USE.NAMES = TRUE)`
+
+
+```{r}
+mapply(rep, times = 1:4, x = 4:1)
+```
+
+
+
+```{r}
+mapply(function(x, y) seq_len(x) + y,
+       c(a =  1, b = 2, c = 3),  # names from first
+       c(A = 10, B = 0, C = -10))
+```
+
+
+### Ejemplo 4 - Clasificación de trámites
+
+El Registro Civil desea determinar la proporción en la que se realizan al día los siguientes trámites : Nuevas Actas(Actas de Nacimiento, Matrimonios, Defunciones, etc) , Solicitud de copias de actas, Solicitud de correciones, a traves de los módulos de acceso. Se estima que al día reciben más de 30000 solicitudes al día. El registro cuenta con los datos de tipos de solicitud de los últimos años, no se desea procesar todos sino realizar un muestreo de los registros diarios y obtener una estimación de las proporciones. Realice la simulación conveniente, suponga que las proporciones poblacionales son (0.38,0.53,0.09) respectivamente. Como parte del análisis incluya comentarios sobre el tamaño de muestra por día y la cantidad de registros de donde se tome la muestra.
+
+
+```{r}
+# Función que simule el muestreo
+Muestra_tramites<-function(Dias,TamMuestra,pPob=c(0.38,0.53,0.09))
+{
+  #Codificamos 1: Nuevas actas, 2:Copias y 3: Correciones
+  replicate(Dias,sample(1:3,TamMuestra,prob = pPob,replace = TRUE)) 
+}
+
+```
+
+
+
+```{r}
+dias<-5000    # Días que se muestrean
+tm<-1000  # Registros en un día que se seleccionan para clasificar
+
+MyMuestra<-Muestra_tramites(dias,tm)
+
+```
+
+Ahora deseamos una función que nos muestre la distribución de cada trámite:
+
+
+```{r}
+distTramite<-function(data,tramite)
+{
+#Título del gráfico
+catalogo<-c('Nuevas Actas','Copias de Actas', 'Correcciónes de Actas')
+# Paleta de color
+mycolor<-sample(colors(),3,replace = FALSE)
+
+#Proporción por muestra por trámite
+vec<-apply(data,2,function(x){mean(x==tramite)})
+#Media y mediana
+medA<-mean(vec)
+mediaA<-median(vec)
+
+# Histograma
+hist(vec,
+     main = catalogo[tramite],
+     freq = FALSE,xlab = 'Proporción',
+     col = mycolor[tramite])
+mtext(bquote('Media:' ~.(round(medA,2))~' Mediana'~ .(round(mediaA,2))),
+      side = 3, 
+      line=-1)
+
+}
+```
+
+
+
+```{r}
+distTramite(MyMuestra,3)
+```
+
+
+
+```{r}
+tramite<-1:3
+
+par(mfrow=c(1,3))
+temp<-sapply(tramite,distTramite,data=MyMuestra)
+
+```
+
+
+
+## `tapply`
+
+ Computa una función sobre un variable, separando por los niveles de un factor.
+ 
+                            `tapply(num_var,factor,FUN)`
+                            
+
+```{r}
+data(iris)
+tapply(iris$Sepal.Width, iris$Species, median)
+```
+
+
+##  `by`
+
+Semejante a `tapply`, permite computar más variables por ejecución
+
+```{r}
+by(iris[,1:4],iris$Species,colMeans)
+```
+
+# Simulación
+
+A continuación una serie de ejercicios de simulación para practicar el uso de las funciones anteriores.
+
+![Digital Dice](https://images-na.ssl-images-amazon.com/images/I/51%2BMnmx8RYL._SX322_BO1,204,203,200_.jpg)
+
+
+## Will Lil and Bill Meet at the Malt Shop?
+
+
+Lil and Bill agree to meet at the malt shop sometime between 3:30
+and 4 o’clock later that afternoon. They’re pretty casual about details,
+however, because each knows that the other, while he or she will show
+up during that half-hour, is as likely to do so at any time during
+that half-hour as at any other time. If Lil arrives first, she’ll wait five
+minutes for Bill, and then leave if he hasn’t appeared by then. If Bill
+arrives first, however, he’ll wait seven minutes for Lil before leaving if
+she hasn’t appeared by then. Neither will wait past 4 o’clock. What’s
+the probability that Lil and Bill meet? What’s the probability of their
+meeting if Bill reduces his waiting time to match Lil’s (i.e., if both
+waiting times are five minutes)? What’s the probability of their meeting
+if Lil increases her waiting time to match Bill’s (i.e., if both waiting
+times are seven minutes)?
+
+
+```{r}
+#Función que simule hora de llegada en un lapso de 30, si la diferencia es mayor al tiempo de espera, no se reunen
+
+HayCita<-function(TiempoEspera,LapsoLlegada=30)
+{
+  hora_arribo<-runif(2,0,LapsoLlegada)
+  ifelse(abs(diff(hora_arribo))>TiempoEspera,0,1)
+  
+}
+
+```
+
+
+```{r}
+nSim<-10000
+mean(replicate(nSim,HayCita(5)))
+mean(replicate(nSim,HayCita(7)))
+
+```
+
+##  A Curious Coin-Flipping Game
+
+Three men have respectively l, m, and n coins which they match
+so that the odd man wins. In case all coins appear alike they
+repeat the throw. Find the average number of tosses required until
+one man is forced out of the game.
+
+
+```{r}
+flipGame<-function(monedas)
+{
+  nPlayers<-length(monedas)
+  tiros<-0
+  while(prod(monedas)>0)
+  {
+  flip<-rbinom(nPlayers,1,0.5)
+  if(sum(flip)==1)
+  {
+    #Jugador ganador
+    ganador<-which(flip==1)
+    #Ajustar monedas
+    monedas[ganador]<-monedas[ganador]+2
+    monedas[-ganador]<-monedas[-ganador]+-1
+  }
+  if(sum(flip)==2)
+  {
+      #Jugador ganador
+    ganador<-which(flip==0)
+    #Ajustar monedas
+    monedas[ganador]<-monedas[ganador]+2
+    monedas[-ganador]<-monedas[-ganador]+-1
+    
+  }
+  tiros<-tiros+1
+  }
+tiros
+}
+```
+
+
+
+```{r}
+flipGame(c(5,7,9))
+```
+
+```{r}
+nSim<-1000
+mean(replicate(nSim,flipGame(c(5,7,9))))
+```
+
+
+
+
+## Steve’s Elevator Problem
+
+Every day I ride up to the 15th floor in an elevator. This elevator
+only goes to floors G, 2, 8, 9, 10, 11, 12, 13, 14, 15, 16, and
+17. On average, I noticed that I usually make 2 or 3 stops when
+going from the ground floor, G, to 15, but it really depends on
+the number of riders in the elevator car. Is it possible to find the
+expected value for the number of stops the elevator makes during
+my ride up to the 15th floor, given the number of riders?
+
+
+```{r}
+
+ParadasElevador<-function(pasajeros,pisoSteve=9,pisoTotal=11)
+{
+
+ paradasViaje<-sample(1:pisoTotal,pasajeros-1,replace = TRUE)
+ paradasViaje<-unique(c(paradasViaje,pisoSteve))
+ sum(paradasViaje<=pisoSteve)
+}
+
+MediasParadas<-function(pasajeros,nSim=10000)
+{mean(replicate(nSim,ParadasElevador(pasajeros)))}
+
+npasajeros<-1:5
+sapply(npasajeros, MediasParadas)
+
+```
+
+
+
+
+
+
+
+# Referencias de interés
+
+*  https://www.r-bloggers.com/vectorization-in-r-why/
+
+*  https://www.r-bloggers.com/apply-lapply-rapply-sapply-functions-in-r/
+
+*  https://www.r-bloggers.com/rapply-function-explanation-and-examples/
+
+*  https://ademos.people.uic.edu/Chapter4.html#303_example_3:_vapply
+
+
+* [![R Cookbook](https://images-na.ssl-images-amazon.com/images/I/91HyAGCKL8L._AC_UL320_SR244,320_.jpg)](https://libgen.is/book/index.php?md5=7F066E92F5FE1AC6A773B6DB7A827AB5)
+
+
+

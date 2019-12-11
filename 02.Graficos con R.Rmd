@@ -1,0 +1,495 @@
+---
+title: "Gráficos en R"
+subtitle: "Motor base y ggplot2"
+author: "Román Castillo"
+date: "2016/12/12 (updated: `r Sys.Date()`)"
+output:
+  xaringan::moon_reader:
+    lib_dir: libs
+    nature:
+      highlightLines: true
+      countIncrementalSlides: false
+---
+
+
+```{r setup, include=FALSE}
+options(htmltools.dir.version = FALSE)
+knitr::opts_chunk$set(out.width='50%', fig.pos= "H",fig.align='center',message=FALSE,  warning = FALSE)
+library(tidyverse)
+library(knitr)
+library(broom)
+library(plotly)
+data("iris")
+```
+
+# `ggplot2`
+
+El motor gráfico tiene una estructura de *layers*. Tiene una gramática del estilo
+
+```{r}
+include_graphics('ggplot-grammar-of-graphics-stack-1.png')
+```
+
+---
+
+La forma de definir el *canvas* de trabajo
+
+```{r}
+ggplot(iris) +  #<< Datos
+  aes(Sepal.Length,Sepal.Width) #<< Estética (qué y como mapear)
+```
+
+
+---
+
+# Seleccion de `geom`
+
+```{r}
+ggplot(iris) +  #<< Datos
+  aes(Sepal.Length,Sepal.Width)+
+  geom_point()
+
+```
+
+---
+# En el módulo base
+
+```{r}
+plot(iris$Sepal.Width,iris$Sepal.Length,pch=20)
+```
+
+---
+
+```{r}
+include_graphics('https://www.datanovia.com/en/wp-content/uploads/dn-tutorials/ggplot2/figures/106-pch-in-r-r-pch-list-showing-different-point-shapes-in-rstudio-1.png')
+```
+
+---
+
+
+```{r}
+x<- seq(-20,20,3)
+data_1<-data.frame(x=x,y=2*x+1,z=x^2)
+ggplot(data_1) +  #<< Datos
+  aes(x,y)+
+  geom_line()
+```
+
+---
+# En el módulo base
+
+
+```{r}
+plot(x,2*x+3,type='l')
+```
+
+---
+# Plot `type`
+
+```{r}
+
+plot(x,0.5*x, type = 'p', col='red')
+points(x,1*x, type = 'l', col='blue')
+points(x,2*x, type = 'b', col='purple')
+points(x,4*x, type = 'o', col='yellow')
+
+```
+
+---
+#  Agregar varios geoms
+
+```{r }
+
+ggplot(data_1) + aes(x=x)+
+geom_line(aes(y=y),col='darkred')+
+geom_line(aes(y=z),col='steelblue3')
+  
+```
+
+
+---
+
+```{r}
+plot(data_1$x,data_1$y,type='l',
+     ylim = c(min(data_1$y),max(data_1$z)),
+     col='darkred')
+lines(data_1$x,data_1$z,
+      type='l',
+      col='steelblue3')
+```
+
+
+
+---
+
+```{r}
+ggplot(iris) +
+  aes(Sepal.Length,Sepal.Width, color=Species)+
+  geom_point()
+
+```
+
+
+---
+
+```{r}
+plot(iris$Sepal.Length,iris$Sepal.Width,col=iris$Species,pch=16)
+```
+
+---
+
+```{r}
+library(GGally)
+ggpairs(iris,aes(color=Species))
+```
+
+---
+
+```{r}
+pairs(iris,col=c('blue','orange','green'))
+```
+
+
+---
+
+
+```{r}
+ggplot(iris) +  #<< Datos
+  aes(Sepal.Length,Sepal.Width) +
+  geom_point() + 
+  stat_smooth()
+
+```
+
+
+---
+
+```{r}
+ggplot(iris) +
+  aes(Sepal.Length,Sepal.Width, color=Species)+
+  geom_point() +
+  stat_smooth()
+
+```
+
+---
+Si queremos que los puntos tengan la información de especie (coloreados por especie por ejemplo) pero
+queremos mostrar la tendencia global (sin agrupar por especie), entonces sería así
+
+```{r}
+ggplot(data=iris) +
+geom_point( aes(x=Sepal.Length, y=Petal.Length,color=Species)) +
+  stat_smooth(aes(x=Sepal.Length, y=Petal.Length)) 
+
+```
+
+---
+
+```{r}
+ggplot(iris) +
+  aes(Sepal.Length,Sepal.Width, color=Species, size=Petal.Width) +
+  geom_point() 
+
+```
+
+---
+```{r include=FALSE}
+muestra<-sample(1:150,35,replace = FALSE)
+
+```
+
+
+```{r}
+ggplot(iris[muestra,])+ 
+  aes(Sepal.Length,Sepal.Width)+
+  geom_text( aes(label=Species))
+```
+
+---
+
+```{r}
+
+plot(iris$Sepal.Length,iris$Sepal.Width,type='n')
+text(iris$Sepal.Length[muestra],iris$Sepal.Width[muestra],labels = iris$Species[muestra], cex = 0.8)
+```
+
+
+---
+
+
+```{r}
+ggplot(iris) +
+  aes(Sepal.Length,Sepal.Width, shape=Species, alpha=Petal.Width) +
+  geom_point() 
+
+```
+
+---
+
+```{r}
+ggplot(data=iris) + 
+  aes(Species,Petal.Length)+
+  geom_boxplot()
+```
+
+---
+
+```{r}
+boxplot(Petal.Length ~ Species, data=iris)
+```
+
+
+---
+
+
+```{r}
+ggplot(iris) + aes(Petal.Length) +
+geom_histogram() 
+```
+
+
+---
+
+
+```{r}
+hist(iris$Petal.Length)
+```
+
+
+---
+
+
+```{r}
+ggplot(data=iris) +  aes(Petal.Length,fill=Species) +
+geom_histogram() 
+```
+
+
+---
+
+
+```{r}
+hist(iris$Petal.Length[iris$Species== "setosa" ],
+     col='red', xlim=c(0,10), ylim =c(0,30),
+     breaks = 5)
+hist(iris$Petal.Length[iris$Species== "versicolor" ],
+     col='blue',add=T)
+hist(iris$Petal.Length[iris$Species== "virginica" ],
+     col = 'green',add=T)
+
+
+```
+
+
+---
+
+
+```{r}
+ggplot(data=iris) +  aes(Petal.Length,fill=Species) +
+geom_density() 
+```
+
+---
+
+
+```{r}
+
+plot(density(iris$Petal.Length[iris$Species== "setosa" ]),
+     col='red',xlim=c(0,10))
+polygon(density(iris$Petal.Length[iris$Species== "setosa" ]),
+        col='red')
+polygon(density(iris$Petal.Length[iris$Species== "versicolor" ]),
+        col='blue')
+polygon(density(iris$Petal.Length[iris$Species== "virginica" ]),
+        col='green')
+
+
+```
+
+
+
+---
+
+ # Agregando facets
+ 
+```{r}
+ggplot(data=iris) +
+aes(Sepal.Length, Petal.Length)+
+geom_point() + 
+facet_wrap(~ Species) 
+```
+ 
+
+---
+
+
+```{r}
+
+par(mfrow=c(1,3),mgp=c(1,1,0),oma = c(3, 3, 0, 0))
+#setosa
+plot(iris$Sepal.Length[iris$Species=='setosa'],iris$Petal.Length[iris$Species=='setosa'],xlab='',ylab='',main='setosa',pch=16)
+#versicolor
+plot(iris$Sepal.Length[iris$Species=='versicolor'],iris$Petal.Length[iris$Species=='versicolor'],xlab='',ylab='',main='versicolor',pch=16)
+#virginica
+plot(iris$Sepal.Length[iris$Species=='virginica'],iris$Petal.Length[iris$Species=='virginica'],xlab='',ylab='',main = 'virginica',pch=16)
+mtext('Sepal.Length', side = 1, outer = TRUE, line = 2)
+mtext('Petal.Length', side = 2, outer = TRUE, line = 2)
+
+```
+
+---
+
+# Plotly
+
+```{r eval=FALSE}
+library(plotly)
+
+set.seed(100)
+d <- diamonds[sample(nrow(diamonds), 1000), ]
+
+p <- ggplot(data = d, aes(x = carat, y = price)) +
+  geom_point(aes(text = paste("Clarity:", clarity)), size = 4) +
+  geom_smooth(aes(colour = cut, fill = cut)) + facet_wrap(~ cut)
+
+ggplotly(p)
+
+```
+
+---
+```{r echo=FALSE}
+library(plotly)
+set.seed(100)
+d <- diamonds[sample(nrow(diamonds), 1000), ]
+
+p <- ggplot(data = d, aes(x = carat, y = price)) +
+  geom_point(aes(text = paste("Clarity:", clarity)), size = 4) +
+  geom_smooth(aes(colour = cut, fill = cut)) + facet_wrap(~ cut)
+
+ggplotly(p)
+
+```
+
+
+---
+
+```{r eval=FALSE}
+g <- ggplot(faithful, aes(x = eruptions, y = waiting)) +
+  stat_density_2d(aes(fill = ..level..), geom = "polygon") + 
+  xlim(1, 6) + ylim(40, 100)
+ggplotly(g)
+```
+
+---
+
+
+```{r echo=FALSE}
+g <- ggplot(faithful, aes(x = eruptions, y = waiting)) +
+  stat_density_2d(aes(fill = ..level..), geom = "polygon") + 
+  xlim(1, 6) + ylim(40, 100)
+ggplotly(g)
+```
+
+
+---
+
+# gganimate
+
+```{r}
+library(gganimate)
+ggplot(iris, aes(x = Petal.Width, y = Petal.Length,color=Species)) + 
+  geom_point()
+```
+
+---
+
+
+```{r}
+ggplot(iris, aes(x = Petal.Width, y = Petal.Length,color=Species)) + 
+  geom_point()+
+transition_states(Species,
+                    transition_length = 2,
+                    state_length = 1) +
+  ease_aes('cubic-in-out')
+
+```
+
+
+---
+
+```{r}
+data("mtcars")
+head(mtcars,5)
+```
+
+---
+
+```{r}
+mtcars %>% dplyr::select(mpg,cyl,gear) %>% head(.,5)
+```
+
+---
+
+
+```{r}
+ggplot(mtcars) + 
+  aes(factor(cyl),mpg) + 
+  geom_boxplot()+
+  facet_grid(factor(gear)~factor(cyl))
+```
+
+
+---
+
+```{r}
+ggplot(mtcars, aes(factor(cyl), mpg)) + 
+  geom_boxplot() + 
+  # Here comes the gganimate code
+  transition_states(
+    gear,
+    transition_length = 2,
+    state_length = 1
+  ) +
+  enter_fade() + 
+  exit_shrink() +
+  ease_aes('sine-in-out')
+```
+
+---
+
+```{r}
+library(gapminder)
+head(gapminder)
+```
+
+---
+
+```{r}
+p<-ggplot(
+  gapminder, 
+  aes(x = gdpPercap, y=lifeExp, size = pop, colour = country)
+  ) +
+  geom_point(show.legend = FALSE, alpha = 0.7) +
+  scale_color_viridis_d() +
+  scale_size(range = c(2, 12)) +
+  scale_x_log10() +
+  labs(x = "GDP per capita", y = "Life expectancy")
+p
+
+```
+
+---
+
+
+```{r}
+p + transition_time(year) +
+  labs(title = "Year: {frame_time}")
+```
+
+---
+
+```{r}
+p + facet_wrap(~continent) +
+  transition_time(year) +
+  labs(title = "Year: {frame_time}")
+```
+

@@ -1,0 +1,174 @@
+---
+title: "R Markdown"
+subtitle: ""
+author: "Román Castillo"
+date: " `r Sys.Date()`"
+output:
+  xaringan::moon_reader:
+    lib_dir: libs
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+---
+class: center, middle
+## Utilidades en Rmarkdown
+
+```{r setup, include=FALSE}
+options(htmltools.dir.version = FALSE)
+knitr::opts_chunk$set(message=FALSE,  warning = FALSE)
+
+library(tidyverse)
+library(knitr)
+
+```
+
+---
+## Estructura documento  Rmarkdown
+
+```{r uno}
+include_graphics("https://bookdown.org/gboccardo/manual-ED-UCH/09-anexos/sintaxis_rmarkdown.png")
+```
+
+
+
+---
+
+```{r dos}
+include_graphics("https://bookdown.org/gboccardo/manual-ED-UCH/09-anexos/rmarkdown_elementos.png")
+```
+---
+
+## YAML
+
+```{r tres}
+include_graphics('https://smac-group.github.io/ds/images/rmd_yaml2.png')
+```
+
+---
+
+```{r}
+include_graphics("img/04.png")
+```
+---
+
+```{r}
+include_graphics("http://web.mit.edu/mact/www/Blog/LaTeX/Preamble.png")
+```
+
+
+---
+```{r}
+include_graphics("img/02.png")
+```
+
+---
+
+```{r}
+include_graphics("img/03.png")
+```
+
+
+---
+
+```{r}
+include_graphics("img/01.png")
+```
+
+---
+
+```{r}
+include_graphics("img/05.png")
+```
+
+---
+
+```{r}
+include_graphics("img/06.png")
+include_graphics("img/09.png")
+```
+
+---
+## Knitr
+
+```{r}
+include_graphics("img/07.png")
+```
+---
+
+```{r}
+include_graphics("img/08.png")
+```
+---
+
+```{r  fig.show = "hold", out.width = "50%"}
+#r  fig.show = "hold", out.width = "50%"
+plot(1:10,runif(10))
+plot(1:10,rnorm(10))
+
+```
+
+---
+
+```{r}
+data(iris)
+iris %>% 
+group_by(Species) %>% 
+  summarise(media=mean(Sepal.Length))
+```
+
+---
+
+```{r}
+data(iris)
+iris %>% 
+group_by(Species) %>% 
+  summarise(media=mean(Sepal.Length)) %>% kable(.,format = 'html')
+
+```
+
+---
+
+```{r}
+include_graphics("img/11.png")
+include_graphics("img/10.png")
+
+```
+
+
+---
+## Latex y Rmarkdown
+
+```{r}
+include_graphics('img/12.png')
+```
+---
+
+```{r}
+include_graphics('img/13.png')
+```
+
+---
+
+```{r}
+include_graphics("img/14.png")
+```
+
+---
+
+```{r}
+include_graphics("img/15.png")
+```
+
+---
+
+```{r}
+include_graphics("img/16.png")
+```
+
+---
+
+```{r}
+include_graphics("img/18.png")
+```
+
